@@ -6,12 +6,13 @@ import Hero from "./components/Hero";
 import UploadPanel from "./components/UploadPanel";
 import MosaicViewer from "./components/MosaicViewer";
 import ZoomCard from "./components/ZoomCard";
-import Footer from "./components/Footer";
+import Footer, { RPC_PREVIEW_MATCH } from "./components/Footer";
 import SolanaFloatingElements from "./components/SolanaFloatingElements";
 import { findLogo } from "./lib/api";
 
 export default function App() {
   const [match, setMatch] = useState(null);
+  const [previewMatch, setPreviewMatch] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [statsRefreshKey, setStatsRefreshKey] = useState(0);
@@ -20,6 +21,7 @@ export default function App() {
     setLoading(true);
     setError(null);
     setMatch(null);
+    setPreviewMatch(null);
     try {
       const result = await findLogo(file);
       setMatch(result);
@@ -42,6 +44,9 @@ export default function App() {
     setError(null);
   };
 
+  // Match real tem precedência sobre preview do hover.
+  const displayMatch = match || previewMatch;
+
   return (
     <div className="min-h-screen relative bg-bg-primary text-text-primary">
       <SolanaFloatingElements />
@@ -55,7 +60,7 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            <MosaicViewer match={match} />
+            <MosaicViewer match={displayMatch} />
           </motion.div>
 
           <motion.aside
@@ -75,7 +80,10 @@ export default function App() {
         </div>
       </main>
 
-      <Footer />
+      <Footer
+        onPreviewEnter={() => !match && setPreviewMatch(RPC_PREVIEW_MATCH)}
+        onPreviewLeave={() => setPreviewMatch(null)}
+      />
     </div>
   );
 }
