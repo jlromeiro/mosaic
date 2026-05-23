@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
 import Header from "./components/Header";
@@ -13,15 +13,28 @@ import { findLogo } from "./lib/api";
 export default function App() {
   const [match, setMatch] = useState(null);
   const [previewMatch, setPreviewMatch] = useState(null);
+  const [uploadedUrl, setUploadedUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [statsRefreshKey, setStatsRefreshKey] = useState(0);
+  const [confirmed, setConfirmed] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (uploadedUrl) URL.revokeObjectURL(uploadedUrl);
+    };
+  }, [uploadedUrl]);
 
   const handleSubmit = async (file) => {
     setLoading(true);
     setError(null);
     setMatch(null);
     setPreviewMatch(null);
+    setConfirmed(false);
+
+    if (uploadedUrl) URL.revokeObjectURL(uploadedUrl);
+    setUploadedUrl(URL.createObjectURL(file));
+
     try {
       const result = await findLogo(file);
       setMatch(result);
@@ -42,9 +55,13 @@ export default function App() {
   const handleReset = () => {
     setMatch(null);
     setError(null);
+    setConfirmed(false);
+    if (uploadedUrl) URL.revokeObjectURL(uploadedUrl);
+    setUploadedUrl(null);
   };
 
-  // Match real tem precedência sobre preview do hover.
+  const handleConfirm = () => setConfirmed(true);
+
   const displayMatch = match || previewMatch;
 
   return (
@@ -75,7 +92,14 @@ export default function App() {
               error={error}
               onReset={handleReset}
             />
-            {match && match.found && <ZoomCard match={match} onReset={handleReset} />}
+            {match && match.found && (
+              <ZoomCard
+                match={match}
+                userUploadUrl={uploadedUrl}
+                onReset={handleReset}
+                onConfirm={confirmed ? null : handleConfirm}
+              />
+            )}
           </motion.aside>
         </div>
       </main>
