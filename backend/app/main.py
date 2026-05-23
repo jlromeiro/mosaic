@@ -71,11 +71,13 @@ async def find_logo(file: UploadFile = File(...)) -> dict:
         "stats": snapshot,
         **result,
     }
-    response["message"] = (
-        "Logo found"
-        if found
-        else "We could not find a reliable match. Try uploading a clearer crop."
-    )
+    if found:
+        response["message"] = "Logo found"
+    else:
+        response["message"] = (
+            "Approximated match. The crop you uploaded may differ from the version "
+            "in the mosaic — try a clearer crop for a better result."
+        )
     return response
 
 

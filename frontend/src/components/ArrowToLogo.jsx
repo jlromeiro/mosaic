@@ -17,26 +17,32 @@ export default function ArrowToLogo({ centerXPct, centerYPct }) {
 
   // Offset pequeno (3%) — a logo ocupa ~1.5% do mosaico, a seta aponta
   // bem próxima sem cobrir.
+  // SVG base aponta pra baixo (cauda y=4, ponta y=50). Rotações são pra
+  // que a PONTA fique mais próxima da logo (apontando em direção a ela):
+  //   top:    seta vem de cima, aponta ↓  → rotate 0
+  //   bottom: seta vem de baixo, aponta ↑ → rotate 180
+  //   left:   seta vem da esquerda, aponta → → rotate -90
+  //   right:  seta vem da direita, aponta ← → rotate 90
   const config = {
     top: {
       style: { left: `${centerXPct}%`, top: `${Math.max(centerYPct - 3, 0)}%`, transform: "translate(-50%, -100%)" },
       bounce: { y: [0, 6, 0] },
-      rotate: 180,
+      rotate: 0,
     },
     bottom: {
       style: { left: `${centerXPct}%`, top: `${Math.min(centerYPct + 3, 100)}%`, transform: "translate(-50%, 0)" },
       bounce: { y: [0, -6, 0] },
-      rotate: 0,
+      rotate: 180,
     },
     left: {
       style: { left: `${Math.max(centerXPct - 3, 0)}%`, top: `${centerYPct}%`, transform: "translate(-100%, -50%)" },
       bounce: { x: [0, 6, 0] },
-      rotate: 90,
+      rotate: -90,
     },
     right: {
       style: { left: `${Math.min(centerXPct + 3, 100)}%`, top: `${centerYPct}%`, transform: "translate(0, -50%)" },
       bounce: { x: [0, -6, 0] },
-      rotate: -90,
+      rotate: 90,
     },
   }[direction];
 

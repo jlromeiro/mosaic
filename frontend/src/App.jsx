@@ -92,7 +92,7 @@ export default function App() {
               error={error}
               onReset={handleReset}
             />
-            {match && match.found && (
+            {match && match.position && (
               <ZoomCard
                 match={match}
                 userUploadUrl={uploadedUrl}

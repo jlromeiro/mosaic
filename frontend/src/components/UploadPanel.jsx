@@ -108,7 +108,7 @@ export default function UploadPanel({ onSubmit, loading, error, onReset }) {
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               className="w-4 h-4 border-2 border-current border-t-transparent rounded-full"
             />
-            <span>Scanning the mosaic...</span>
+            <span>Procurando aqui...</span>
           </>
         ) : (
           <>
