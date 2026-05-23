@@ -181,6 +181,17 @@ export default function ZoomCard({ match, userUploadUrl, onReset, onConfirm }) {
         <span>{elapsed_ms}ms</span>
       </div>
 
+      {(match.method || match.margin !== undefined) && (
+        <div className="flex items-center justify-between text-[10px] text-text-tertiary font-mono">
+          {match.method && <span>method · {match.method}</span>}
+          {match.margin !== undefined && (
+            <span title="confidence gap to second best match (higher = less ambiguous)">
+              margin · {(match.margin * 100).toFixed(0)}%
+            </span>
+          )}
+        </div>
+      )}
+
       {isApprox && (
         <motion.div
           initial={{ opacity: 0, y: -4 }}
