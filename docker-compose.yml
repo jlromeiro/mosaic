@@ -17,6 +17,7 @@ services:
       - "traefik.http.routers.mosaic-web.tls=true"
       - "traefik.http.routers.mosaic-web.tls.certresolver=leresolver"
       - "traefik.http.routers.mosaic-web.service=mosaic-web"
+      - "traefik.http.routers.mosaic-web.priority=10"
 
       - "traefik.http.routers.mosaic-web-http.rule=Host(`mosaic.assistent.top`)"
       - "traefik.http.routers.mosaic-web-http.entrypoints=web"
@@ -47,7 +48,7 @@ services:
       - "traefik.http.routers.mosaic-api.tls=true"
       - "traefik.http.routers.mosaic-api.tls.certresolver=leresolver"
       - "traefik.http.routers.mosaic-api.service=mosaic-api"
-      - "traefik.http.routers.mosaic-api.priority=10"
+      - "traefik.http.routers.mosaic-api.priority=100"
 
       - "traefik.http.routers.mosaic-api-http.rule=Host(`mosaic.assistent.top`) && PathPrefix(`/api`)"
       - "traefik.http.routers.mosaic-api-http.entrypoints=web"
