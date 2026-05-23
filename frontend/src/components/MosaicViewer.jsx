@@ -1,19 +1,29 @@
-import ArrowToLogo from "./ArrowToLogo";
+import CircleHighlight from "./CircleHighlight";
 
 const MOSAIC_SRC = "/mosaic.jpg";
 // Aspect-ratio do mosaico fonte (4096x3948 ~ 1.0375). Casar exato com o
 // container elimina o crop do object-cover — sem isso, as % de posição
 // do mosaico não correspondem 1:1 às % do container exibido.
 const ASPECT = "4096 / 3948";
+const APPROX_THRESHOLD = 0.45;
 
 export default function MosaicViewer({ match }) {
-  let arrowProps = null;
+  let circleProps = null;
 
-  if (match && match.found && match.mosaic) {
+  if (match && match.position && match.mosaic) {
     const { width: mw, height: mh } = match.mosaic;
     const cxPct = (match.position.centerX / mw) * 100;
     const cyPct = (match.position.centerY / mh) * 100;
-    arrowProps = { centerXPct: cxPct, centerYPct: cyPct };
+    // Tamanho em % do width do container (e do mosaico, já que aspects coincidem).
+    const sizePct = (match.position.width / mw) * 100;
+    const isApprox = !match.found || (match.confidence ?? 0) < APPROX_THRESHOLD;
+
+    circleProps = {
+      centerXPct: cxPct,
+      centerYPct: cyPct,
+      sizePct,
+      color: isApprox ? "#FACC15" : "#14F195",
+    };
   }
 
   return (
@@ -28,7 +38,7 @@ export default function MosaicViewer({ match }) {
         style={{ objectFit: "fill" }}
         draggable={false}
       />
-      {arrowProps && <ArrowToLogo {...arrowProps} />}
+      {circleProps && <CircleHighlight {...circleProps} />}
     </div>
   );
 }
