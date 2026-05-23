@@ -12,17 +12,36 @@ services:
       - "traefik.docker.network=portainer_default"
       - "traefik.http.services.mosaic-web.loadbalancer.server.port=80"
 
-      - "traefik.http.routers.mosaic-web.rule=Host(`mosaic.assistent.top`)"
+      # HTTPS: domínio canônico
+      - "traefik.http.routers.mosaic-web.rule=Host(`mosaic.rpcpriority.com`)"
       - "traefik.http.routers.mosaic-web.entrypoints=websecure"
       - "traefik.http.routers.mosaic-web.tls=true"
       - "traefik.http.routers.mosaic-web.tls.certresolver=leresolver"
       - "traefik.http.routers.mosaic-web.service=mosaic-web"
       - "traefik.http.routers.mosaic-web.priority=10"
 
-      - "traefik.http.routers.mosaic-web-http.rule=Host(`mosaic.assistent.top`)"
+      # HTTP → HTTPS pro domínio canônico
+      - "traefik.http.routers.mosaic-web-http.rule=Host(`mosaic.rpcpriority.com`)"
       - "traefik.http.routers.mosaic-web-http.entrypoints=web"
       - "traefik.http.routers.mosaic-web-http.middlewares=mosaic-redirect-https"
       - "traefik.http.middlewares.mosaic-redirect-https.redirectscheme.scheme=https"
+
+      # Redirect 301: mosaic.assistent.top → mosaic.rpcpriority.com (HTTPS)
+      - "traefik.http.routers.mosaic-legacy.rule=Host(`mosaic.assistent.top`)"
+      - "traefik.http.routers.mosaic-legacy.entrypoints=websecure"
+      - "traefik.http.routers.mosaic-legacy.tls=true"
+      - "traefik.http.routers.mosaic-legacy.tls.certresolver=leresolver"
+      - "traefik.http.routers.mosaic-legacy.service=mosaic-web"
+      - "traefik.http.routers.mosaic-legacy.middlewares=mosaic-redirect-canonical"
+      - "traefik.http.routers.mosaic-legacy.priority=5"
+      - "traefik.http.middlewares.mosaic-redirect-canonical.redirectregex.regex=^https?://mosaic\\.assistent\\.top/(.*)"
+      - "traefik.http.middlewares.mosaic-redirect-canonical.redirectregex.replacement=https://mosaic.rpcpriority.com/$${1}"
+      - "traefik.http.middlewares.mosaic-redirect-canonical.redirectregex.permanent=true"
+
+      # HTTP → HTTPS pro domínio legacy
+      - "traefik.http.routers.mosaic-legacy-http.rule=Host(`mosaic.assistent.top`)"
+      - "traefik.http.routers.mosaic-legacy-http.entrypoints=web"
+      - "traefik.http.routers.mosaic-legacy-http.middlewares=mosaic-redirect-https"
 
   mosaic-api:
     build:
@@ -33,7 +52,7 @@ services:
     environment:
       - MOSAIC_PATH=/app/assets/mosaic_original.jpg
       - STATS_PATH=/app/data/stats.json
-      - ALLOWED_ORIGINS=https://mosaic.assistent.top
+      - ALLOWED_ORIGINS=https://mosaic.rpcpriority.com,https://mosaic.assistent.top
     volumes:
       - mosaic_data:/app/data
     networks:
@@ -43,14 +62,14 @@ services:
       - "traefik.docker.network=portainer_default"
       - "traefik.http.services.mosaic-api.loadbalancer.server.port=8000"
 
-      - "traefik.http.routers.mosaic-api.rule=Host(`mosaic.assistent.top`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.mosaic-api.rule=Host(`mosaic.rpcpriority.com`) && PathPrefix(`/api`)"
       - "traefik.http.routers.mosaic-api.entrypoints=websecure"
       - "traefik.http.routers.mosaic-api.tls=true"
       - "traefik.http.routers.mosaic-api.tls.certresolver=leresolver"
       - "traefik.http.routers.mosaic-api.service=mosaic-api"
       - "traefik.http.routers.mosaic-api.priority=100"
 
-      - "traefik.http.routers.mosaic-api-http.rule=Host(`mosaic.assistent.top`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.mosaic-api-http.rule=Host(`mosaic.rpcpriority.com`) && PathPrefix(`/api`)"
       - "traefik.http.routers.mosaic-api-http.entrypoints=web"
       - "traefik.http.routers.mosaic-api-http.middlewares=mosaic-redirect-https"
 

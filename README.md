@@ -11,7 +11,7 @@ Landing interativa que permite participantes do hackathon Solana encontrarem sua
 | Frontend | React (CRA) + Tailwind + Framer Motion + tsparticles + lucide-react |
 | Backend | FastAPI + OpenCV + Pillow + NumPy |
 | Infra | Docker Compose + Traefik (network `portainer_default`) |
-| Deploy | `mosaic.assistent.top` em kvm4 (168.231.97.238) |
+| Deploy | `mosaic.rpcpriority.com` em kvm4 (168.231.97.238); `mosaic.assistent.top` redireciona 301 |
 
 ## Estrutura
 
@@ -54,4 +54,4 @@ docker compose up -d --build
 docker compose logs -f
 ```
 
-DNS: `mosaic.assistent.top` → `168.231.97.238` (A record).
+DNS: `mosaic.rpcpriority.com` → `168.231.97.238` (A record). `mosaic.assistent.top` mantém A record + redirect 301 pra preservar links compartilhados.
