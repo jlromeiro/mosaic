@@ -1,20 +1,23 @@
+import { useEffect, useState } from "react";
 import CircleHighlight from "./CircleHighlight";
 
 const MOSAIC_SRC = "/mosaic.jpg";
-// Aspect-ratio do mosaico fonte (4096x3948 ~ 1.0375). Casar exato com o
-// container elimina o crop do object-cover — sem isso, as % de posição
-// do mosaico não correspondem 1:1 às % do container exibido.
 const ASPECT = "4096 / 3948";
 const APPROX_THRESHOLD = 0.45;
 
 export default function MosaicViewer({ match }) {
-  let circleProps = null;
+  const [dismissed, setDismissed] = useState(false);
 
+  // Reset dismissal sempre que houver um novo match (ou hover preview novo).
+  useEffect(() => {
+    setDismissed(false);
+  }, [match?.position?.centerX, match?.position?.centerY]);
+
+  let circleProps = null;
   if (match && match.position && match.mosaic) {
     const { width: mw, height: mh } = match.mosaic;
     const cxPct = (match.position.centerX / mw) * 100;
     const cyPct = (match.position.centerY / mh) * 100;
-    // Tamanho em % do width do container (e do mosaico, já que aspects coincidem).
     const sizePct = (match.position.width / mw) * 100;
     const isApprox = !match.found || (match.confidence ?? 0) < APPROX_THRESHOLD;
 
@@ -23,6 +26,8 @@ export default function MosaicViewer({ match }) {
       centerYPct: cyPct,
       sizePct,
       color: isApprox ? "#FACC15" : "#14F195",
+      dismissed,
+      onDismiss: () => setDismissed(true),
     };
   }
 
