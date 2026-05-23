@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { motion } from "framer-motion";
 import PulsingHighlight from "./PulsingHighlight";
 import ArrowToLogo from "./ArrowToLogo";
@@ -7,23 +7,23 @@ const MOSAIC_SRC = "/mosaic.jpg";
 
 export default function MosaicViewer({ match }) {
   const containerRef = useRef(null);
-  const [naturalSize, setNaturalSize] = useState(null);
-
-  const handleLoad = (e) => {
-    setNaturalSize({ w: e.target.naturalWidth, h: e.target.naturalHeight });
-  };
 
   let highlightProps = null;
   let arrowProps = null;
   let zoomTransform = { scale: 1, x: 0, y: 0 };
 
-  if (match && match.found && naturalSize) {
-    const xPct = (match.position.x / naturalSize.w) * 100;
-    const yPct = (match.position.y / naturalSize.h) * 100;
-    const wPct = (match.position.width / naturalSize.w) * 100;
-    const hPct = (match.position.height / naturalSize.h) * 100;
-    const cxPct = (match.position.centerX / naturalSize.w) * 100;
-    const cyPct = (match.position.centerY / naturalSize.h) * 100;
+  // Coordenadas vêm do backend já na escala do mosaico full (4096x3948).
+  // O <img> renderiza a versão web (2048x1974), mas object-cover preserva
+  // a proporção, então converter por ratio funciona em qualquer resolução
+  // do <img> exibida.
+  if (match && match.found && match.mosaic) {
+    const { width: mw, height: mh } = match.mosaic;
+    const xPct = (match.position.x / mw) * 100;
+    const yPct = (match.position.y / mh) * 100;
+    const wPct = (match.position.width / mw) * 100;
+    const hPct = (match.position.height / mh) * 100;
+    const cxPct = (match.position.centerX / mw) * 100;
+    const cyPct = (match.position.centerY / mh) * 100;
 
     highlightProps = { x: xPct, y: yPct, width: wPct, height: hPct };
     arrowProps = { centerXPct: cxPct, centerYPct: cyPct };
@@ -50,7 +50,6 @@ export default function MosaicViewer({ match }) {
         <img
           src={MOSAIC_SRC}
           alt="Solana Hackathon Mosaic"
-          onLoad={handleLoad}
           className="w-full h-full object-cover select-none"
           draggable={false}
         />
