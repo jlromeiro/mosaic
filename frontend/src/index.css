@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  background: #050510;
+  color: #ffffff;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(60% 50% at 20% 20%, rgba(153, 69, 255, 0.18) 0%, transparent 60%),
+    radial-gradient(50% 40% at 85% 80%, rgba(20, 241, 149, 0.14) 0%, transparent 60%),
+    radial-gradient(40% 35% at 50% 100%, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+.solana-gradient-text {
+  background: linear-gradient(135deg, #9945ff 0%, #14f195 50%, #00d4ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.solana-gradient-border {
+  position: relative;
+  background: rgba(20, 20, 48, 0.6);
+  backdrop-filter: blur(12px);
+}
+.solana-gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #9945ff, #14f195, #00d4ff);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}

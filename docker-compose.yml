@@ -1,0 +1,61 @@
+services:
+  mosaic-web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mosaic-web
+    restart: unless-stopped
+    networks:
+      - portainer_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=portainer_default"
+      - "traefik.http.services.mosaic-web.loadbalancer.server.port=80"
+
+      - "traefik.http.routers.mosaic-web.rule=Host(`mosaic.assistent.top`)"
+      - "traefik.http.routers.mosaic-web.entrypoints=websecure"
+      - "traefik.http.routers.mosaic-web.tls=true"
+      - "traefik.http.routers.mosaic-web.tls.certresolver=leresolver"
+      - "traefik.http.routers.mosaic-web.service=mosaic-web"
+
+      - "traefik.http.routers.mosaic-web-http.rule=Host(`mosaic.assistent.top`)"
+      - "traefik.http.routers.mosaic-web-http.entrypoints=web"
+      - "traefik.http.routers.mosaic-web-http.middlewares=mosaic-redirect-https"
+      - "traefik.http.middlewares.mosaic-redirect-https.redirectscheme.scheme=https"
+
+  mosaic-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mosaic-api
+    restart: unless-stopped
+    environment:
+      - MOSAIC_PATH=/app/assets/mosaic_original.jpg
+      - STATS_PATH=/app/data/stats.json
+      - ALLOWED_ORIGINS=https://mosaic.assistent.top
+    volumes:
+      - mosaic_data:/app/data
+    networks:
+      - portainer_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=portainer_default"
+      - "traefik.http.services.mosaic-api.loadbalancer.server.port=8000"
+
+      - "traefik.http.routers.mosaic-api.rule=Host(`mosaic.assistent.top`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.mosaic-api.entrypoints=websecure"
+      - "traefik.http.routers.mosaic-api.tls=true"
+      - "traefik.http.routers.mosaic-api.tls.certresolver=leresolver"
+      - "traefik.http.routers.mosaic-api.service=mosaic-api"
+      - "traefik.http.routers.mosaic-api.priority=10"
+
+      - "traefik.http.routers.mosaic-api-http.rule=Host(`mosaic.assistent.top`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.mosaic-api-http.entrypoints=web"
+      - "traefik.http.routers.mosaic-api-http.middlewares=mosaic-redirect-https"
+
+networks:
+  portainer_default:
+    external: true
+
+volumes:
+  mosaic_data:
