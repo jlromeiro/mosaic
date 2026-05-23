@@ -13,8 +13,19 @@ export default function ZoomCard({ match, userUploadUrl, onReset, onConfirm }) {
   const isHigh = confidence >= HIGH_CONFIDENCE;
   const isApprox = !found || confidence < FOUND_THRESHOLD;
 
-  const left = -(position.x - position.width * 6) * zoomScale;
-  const top = -(position.y - position.height * 6) * zoomScale;
+  // Posicionamento em % do container (independente do tamanho exibido).
+  // Centro do mosaico no zoom é o centro da logo encontrada.
+  const cxPct = (position.centerX / mosaic.width) * 100;
+  const cyPct = (position.centerY / mosaic.height) * 100;
+  const xPct = (position.x / mosaic.width) * 100;
+  const yPct = (position.y / mosaic.height) * 100;
+  const wPct = (position.width / mosaic.width) * 100;
+  const hPct = (position.height / mosaic.height) * 100;
+
+  // Pra que o ponto centerXPct do mosaico zoomado caia no 50% do
+  // container: left do div ampliado = 50% - centerXPct * zoomScale%.
+  const bgLeftPct = 50 - cxPct * zoomScale;
+  const bgTopPct = 50 - cyPct * zoomScale;
 
   const handleDownload = async () => {
     try {
@@ -131,33 +142,36 @@ export default function ZoomCard({ match, userUploadUrl, onReset, onConfirm }) {
           <div className="text-[10px] uppercase tracking-wider text-text-tertiary px-0.5">
             {isApprox ? "Closest match found" : "What we found"}
           </div>
-          <div className="relative aspect-square rounded-lg overflow-hidden bg-bg-secondary border border-border-subtle">
+          <div
+            className="relative rounded-lg overflow-hidden bg-bg-secondary border border-border-subtle"
+            style={{ aspectRatio: `${mosaic.width} / ${mosaic.height}` }}
+          >
             <div
               className="absolute"
               style={{
-                left: `${left}px`,
-                top: `${top}px`,
-                width: `${mosaic.width * zoomScale}px`,
-                height: `${mosaic.height * zoomScale}px`,
+                left: `${bgLeftPct}%`,
+                top: `${bgTopPct}%`,
+                width: `${100 * zoomScale}%`,
+                height: `${100 * zoomScale}%`,
                 backgroundImage: `url(${MOSAIC_SRC})`,
                 backgroundSize: "100% 100%",
               }}
-            />
-            <div
-              className="absolute pointer-events-none"
-              style={{
-                left: "50%",
-                top: "50%",
-                width: `${position.width * zoomScale}px`,
-                height: `${position.height * zoomScale}px`,
-                transform: "translate(-50%, -50%)",
-                border: `3px solid ${isApprox ? "#FACC15" : "#14F195"}`,
-                borderRadius: "4px",
-                boxShadow: isApprox
-                  ? "0 0 24px rgba(250,204,21,0.6), inset 0 0 12px rgba(250,204,21,0.3)"
-                  : "0 0 24px rgba(20,241,149,0.7), inset 0 0 12px rgba(20,241,149,0.3)",
-              }}
-            />
+            >
+              <div
+                className="absolute pointer-events-none"
+                style={{
+                  left: `${xPct}%`,
+                  top: `${yPct}%`,
+                  width: `${wPct}%`,
+                  height: `${hPct}%`,
+                  border: `3px solid ${isApprox ? "#FACC15" : "#14F195"}`,
+                  borderRadius: "4px",
+                  boxShadow: isApprox
+                    ? "0 0 24px rgba(250,204,21,0.6), inset 0 0 12px rgba(250,204,21,0.3)"
+                    : "0 0 24px rgba(20,241,149,0.7), inset 0 0 12px rgba(20,241,149,0.3)",
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
