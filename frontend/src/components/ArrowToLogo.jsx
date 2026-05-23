@@ -12,33 +12,29 @@ function pickDirection(centerXPct, centerYPct) {
   return "right";
 }
 
-// counterScale: usado quando a seta vive dentro de um container que está
-// sendo zoomado. Aplicado num <div> interno pra cancelar a ampliação do
-// SVG (a posição em % continua relativa ao mosaico, mas o tamanho da seta
-// no viewport fica constante).
-export default function ArrowToLogo({ centerXPct, centerYPct, counterScale = 1 }) {
+export default function ArrowToLogo({ centerXPct, centerYPct }) {
   const direction = pickDirection(centerXPct, centerYPct);
 
-  // Offset reduzido (4%) pra seta ficar perto da logo, encostando na
-  // borda do retângulo pulsante.
+  // Offset pequeno (3%) — a logo ocupa ~1.5% do mosaico, a seta aponta
+  // bem próxima sem cobrir.
   const config = {
     top: {
-      style: { left: `${centerXPct}%`, top: `${Math.max(centerYPct - 4, 0)}%`, transform: "translate(-50%, -100%)" },
+      style: { left: `${centerXPct}%`, top: `${Math.max(centerYPct - 3, 0)}%`, transform: "translate(-50%, -100%)" },
       bounce: { y: [0, 6, 0] },
       rotate: 180,
     },
     bottom: {
-      style: { left: `${centerXPct}%`, top: `${Math.min(centerYPct + 4, 100)}%`, transform: "translate(-50%, 0)" },
+      style: { left: `${centerXPct}%`, top: `${Math.min(centerYPct + 3, 100)}%`, transform: "translate(-50%, 0)" },
       bounce: { y: [0, -6, 0] },
       rotate: 0,
     },
     left: {
-      style: { left: `${Math.max(centerXPct - 4, 0)}%`, top: `${centerYPct}%`, transform: "translate(-100%, -50%)" },
+      style: { left: `${Math.max(centerXPct - 3, 0)}%`, top: `${centerYPct}%`, transform: "translate(-100%, -50%)" },
       bounce: { x: [0, 6, 0] },
       rotate: 90,
     },
     right: {
-      style: { left: `${Math.min(centerXPct + 4, 100)}%`, top: `${centerYPct}%`, transform: "translate(0, -50%)" },
+      style: { left: `${Math.min(centerXPct + 3, 100)}%`, top: `${centerYPct}%`, transform: "translate(0, -50%)" },
       bounce: { x: [0, -6, 0] },
       rotate: -90,
     },
@@ -50,39 +46,37 @@ export default function ArrowToLogo({ centerXPct, centerYPct, counterScale = 1 }
       style={config.style}
       initial={{ opacity: 0, scale: 0.4 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
     >
-      <div style={{ transform: `scale(${counterScale})`, transformOrigin: "center" }}>
-        <motion.div
-          animate={config.bounce}
-          transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+      <motion.div
+        animate={config.bounce}
+        transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <svg
+          width="48"
+          height="48"
+          viewBox="0 0 64 64"
+          style={{
+            transform: `rotate(${config.rotate}deg)`,
+            filter: "drop-shadow(0 0 14px rgba(20,241,149,0.95))",
+          }}
         >
-          <svg
-            width="56"
-            height="56"
-            viewBox="0 0 64 64"
-            style={{
-              transform: `rotate(${config.rotate}deg)`,
-              filter: "drop-shadow(0 0 12px rgba(20,241,149,0.85))",
-            }}
-          >
-            <defs>
-              <linearGradient id="arrowGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#00D4FF" />
-                <stop offset="100%" stopColor="#14F195" />
-              </linearGradient>
-            </defs>
-            <path
-              d="M32 8 L32 50 M32 50 L20 38 M32 50 L44 38"
-              stroke="url(#arrowGrad)"
-              strokeWidth="5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-          </svg>
-        </motion.div>
-      </div>
+          <defs>
+            <linearGradient id="arrowGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#00D4FF" />
+              <stop offset="100%" stopColor="#14F195" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M32 4 L32 50 M32 50 L18 36 M32 50 L46 36"
+            stroke="url(#arrowGrad)"
+            strokeWidth="6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+        </svg>
+      </motion.div>
     </motion.div>
   );
 }
