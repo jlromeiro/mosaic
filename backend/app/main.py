@@ -1,3 +1,4 @@
+import asyncio
 import os
 import time
 from pathlib import Path
@@ -59,7 +60,11 @@ async def find_logo(file: UploadFile = File(...)) -> dict:
         raise HTTPException(status_code=400, detail=reason)
 
     started = time.perf_counter()
-    result = matcher.find(contents)
+    # Roda matcher (CPU-bound, ~60s) em threadpool — libera o event loop
+    # pra processar healthcheck, /api/stats e outras requests durante o
+    # matching. Sem isso, o handler bloqueia tudo e o Docker marca o
+    # container como unhealthy após ~15s sem responder /api/health.
+    result = await asyncio.to_thread(matcher.find, contents)
     elapsed_ms = int((time.perf_counter() - started) * 1000)
 
     found = result.get("found", False)
