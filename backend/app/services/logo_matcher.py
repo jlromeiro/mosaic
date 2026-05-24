@@ -24,7 +24,11 @@ from typing import Optional
 SQUARE_SIZES = list(range(22, 76, 4))           # 14 templates 22..74 px
 ASPECT_SCALES = np.linspace(0.18, 1.20, 18)     # 18 scales 0.18..1.20
 MIN_CONFIDENCE = 0.50
-MIN_MARGIN = 0.05
+# Margin pro segundo melhor é exposto no response (debug/info) mas não
+# entra no critério found — o threshold simples de confidence cobre bem
+# os casos reais. Checar margin tava marcando matches de 78% como
+# "approximated" quando o segundo melhor era também alto (logos similares
+# no mosaico), confundindo o usuário.
 
 
 class LogoMatcher:
@@ -79,10 +83,7 @@ class LogoMatcher:
             "centerY": int(best["y"] + best["h"] / 2),
         }
 
-        confident = (
-            best["confidence"] >= MIN_CONFIDENCE
-            and margin >= MIN_MARGIN
-        )
+        confident = best["confidence"] >= MIN_CONFIDENCE
 
         return {
             "found": confident,
