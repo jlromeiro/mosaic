@@ -24,7 +24,6 @@ export default function Footer({ onPreviewEnter, onPreviewLeave }) {
           href="https://rpcpriority.com/"
           target="_blank"
           rel="noopener noreferrer"
-          title="Learn more about our hackathon submission"
           className="group flex items-center gap-3 cursor-pointer
             transition-all duration-300 hover:scale-[1.02]
             focus:outline-none focus:ring-2 focus:ring-solana-green/40 rounded-lg
@@ -33,7 +32,7 @@ export default function Footer({ onPreviewEnter, onPreviewLeave }) {
           onMouseLeave={onPreviewLeave}
           onFocus={onPreviewEnter}
           onBlur={onPreviewLeave}
-          aria-label="Visit RPC Priority Protocol website — learn more about our hackathon submission (hover previews logo position in the mosaic)"
+          aria-label="Visit RPC Priority Protocol website (hover previews logo position in the mosaic)"
         >
           <img
             src="/logo-rpc.png"
@@ -42,7 +41,7 @@ export default function Footer({ onPreviewEnter, onPreviewLeave }) {
               transition-shadow duration-300
               group-hover:shadow-[0_0_20px_rgba(20,241,149,0.6)]"
           />
-          <div className="text-sm leading-tight">
+          <div className="text-sm">
             <div className="text-text-secondary group-hover:text-solana-green transition-colors">
               Powered by
             </div>
@@ -52,9 +51,6 @@ export default function Footer({ onPreviewEnter, onPreviewLeave }) {
                 className="w-3 h-3 text-text-tertiary group-hover:text-solana-green transition-colors"
                 strokeWidth={2.5}
               />
-            </div>
-            <div className="text-[11px] text-text-tertiary group-hover:text-text-secondary transition-colors mt-0.5">
-              Learn more about our hackathon submission
             </div>
           </div>
         </a>
