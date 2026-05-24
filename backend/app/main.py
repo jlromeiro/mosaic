@@ -17,7 +17,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 MOSAIC_PATH = Path(os.getenv("MOSAIC_PATH", BASE_DIR / "assets" / "mosaic_original.jpg"))
 STATS_PATH = Path(os.getenv("STATS_PATH", BASE_DIR / "data" / "stats.json"))
 
-app = FastAPI(title="Mosaico Solana Hackathon API", version="0.1.0")
+app = FastAPI(
+    title="Mosaico Solana Hackathon API",
+    description=(
+        "Find a logo inside the Solana Hackathon mosaic via OpenCV template "
+        "matching (hybrid: color/grayscale × square/aspect-preserved). "
+        "Powered by RPC Priority Protocol — https://rpcpriority.com"
+    ),
+    version="0.1.0",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
+)
 
 app.add_middleware(
     CORSMiddleware,
