@@ -59,6 +59,9 @@ export default function UploadPanel({ onSubmit, loading, error, onReset }) {
             <p className="text-xs text-text-tertiary">
               PNG, JPG or WEBP · up to 5MB
             </p>
+            <p className="text-[11px] text-text-tertiary/70 mt-1.5 max-w-xs mx-auto leading-snug">
+              Best results: upload your original logo file, not a photo or screenshot.
+            </p>
           </div>
         )}
         {file && preview && (

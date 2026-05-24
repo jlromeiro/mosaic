@@ -1,17 +1,20 @@
 import { motion } from "framer-motion";
-import { Download, RotateCcw, MapPin, AlertTriangle, Check, HelpCircle } from "lucide-react";
+import { Download, RotateCcw, MapPin, HelpCircle } from "lucide-react";
 
 const MOSAIC_SRC = "/mosaic.jpg";
-const HIGH_CONFIDENCE = 0.80;
-const FOUND_THRESHOLD = 0.45;
+// Threshold único: acima de 65% mostramos como match válido ("Found!");
+// abaixo, "Approximated" pedindo logo mais clara. Removido o tier ciano
+// intermediário que estava marcando confidence em torno de 70% como
+// "Match confidence is moderate" — confundia usuários com match razoável.
+const CONFIDENT_THRESHOLD = 0.65;
 
 export default function ZoomCard({ match, userUploadUrl, onReset, onConfirm }) {
   if (!match || !match.position) return null;
 
   const { position, mosaic, confidence, elapsed_ms, found } = match;
   const zoomScale = 6;
-  const isHigh = confidence >= HIGH_CONFIDENCE;
-  const isApprox = !found || confidence < FOUND_THRESHOLD;
+  const isConfident = found && confidence >= CONFIDENT_THRESHOLD;
+  const isApprox = !isConfident;
 
   // Posicionamento em % do container (independente do tamanho exibido).
   // Centro do mosaico no zoom é o centro da logo encontrada.
@@ -72,33 +75,21 @@ export default function ZoomCard({ match, userUploadUrl, onReset, onConfirm }) {
     }
   };
 
-  // Tier visual: high (verde) · medium (ciano) · approximated (amarelo)
-  let tier;
-  if (isHigh) {
-    tier = {
-      Icon: MapPin,
-      title: "Found! Your project is here.",
-      color: "text-solana-green",
-      pill: "bg-solana-green/15 text-solana-green",
-      border: "border-solana-green/40",
-    };
-  } else if (!isApprox) {
-    tier = {
-      Icon: AlertTriangle,
-      title: "We think it's here.",
-      color: "text-solana-cyan",
-      pill: "bg-solana-cyan/15 text-solana-cyan",
-      border: "border-solana-cyan/40",
-    };
-  } else {
-    tier = {
-      Icon: HelpCircle,
-      title: "Approximated match",
-      color: "text-yellow-400",
-      pill: "bg-yellow-400/15 text-yellow-400",
-      border: "border-yellow-400/40",
-    };
-  }
+  // 2 tiers: confiante (verde) · aproximado (amarelo). O ciano intermediário
+  // foi removido porque "Match confidence is moderate" em ~70% era confuso.
+  const tier = isConfident
+    ? {
+        Icon: MapPin,
+        title: "Found! Your project is here.",
+        color: "text-solana-green",
+        pill: "bg-solana-green/15 text-solana-green",
+      }
+    : {
+        Icon: HelpCircle,
+        title: "Approximated match",
+        color: "text-yellow-400",
+        pill: "bg-yellow-400/15 text-yellow-400",
+      };
 
   const TierIcon = tier.Icon;
 
@@ -198,36 +189,13 @@ export default function ZoomCard({ match, userUploadUrl, onReset, onConfirm }) {
           animate={{ opacity: 1, y: 0 }}
           className="text-xs text-text-secondary bg-yellow-400/10 border border-yellow-400/30 rounded-lg p-3"
         >
-          <span className="font-semibold text-yellow-400">
-            {(confidence * 100).toFixed(0)}% similarity
-          </span>{" "}
-          to what's in the mosaic — likely not a confident match. Compare both images and try a
-          clearer crop of your logo (same version, same colors).
-        </motion.div>
-      )}
-
-      {!isHigh && !isApprox && (
-        <motion.div
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-xs text-text-secondary bg-solana-cyan/10 border border-solana-cyan/30 rounded-lg p-3"
-        >
-          Match confidence is moderate. Compare both images — if it doesn't look right, try
-          uploading a clearer crop.
+          Try a clearer crop of your original logo (same version, same colors). Avoid photos and
+          screenshots.
         </motion.div>
       )}
 
       <div className="flex gap-2">
-        {!isHigh && !isApprox && onConfirm && (
-          <button
-            onClick={onConfirm}
-            className="flex-1 py-2.5 rounded-lg bg-solana-green/15 hover:bg-solana-green/25 border border-solana-green/40 text-solana-green text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-          >
-            <Check className="w-4 h-4" />
-            That's mine
-          </button>
-        )}
-        {!isApprox && (
+        {isConfident && (
           <button
             onClick={handleDownload}
             className="flex-1 py-2.5 rounded-lg bg-bg-tertiary hover:bg-border-emphasis text-text-primary text-sm font-medium flex items-center justify-center gap-2 transition-colors"

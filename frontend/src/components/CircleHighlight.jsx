@@ -4,9 +4,13 @@ import { motion } from "framer-motion";
 // desvios. Toda a geometria fica em % do container externo, então o
 // efeito escala em qualquer viewport.
 const DIAMETER_RATIO = 4.5;
+// Floor mínimo em % do container — garante visibilidade em mobile (onde
+// o container ~325px x sizePct ~1.6% daria ~23px sem o floor). Em desktop
+// o cálculo natural já passa de 16% e o floor não tem efeito.
+const MIN_DIAMETER_PCT = 16;
 
 export default function CircleHighlight({ centerXPct, centerYPct, sizePct, color = "#14F195" }) {
-  const diameterPct = sizePct * DIAMETER_RATIO;
+  const diameterPct = Math.max(sizePct * DIAMETER_RATIO, MIN_DIAMETER_PCT);
 
   const rgba = (alpha) => {
     if (color === "#FACC15") return `rgba(250,204,21,${alpha})`;

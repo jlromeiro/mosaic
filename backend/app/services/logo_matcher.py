@@ -1,7 +1,10 @@
-import cv2
-import numpy as np
+import io
 from pathlib import Path
 from typing import Optional
+
+import cv2
+import numpy as np
+from PIL import Image, ImageOps
 
 # Matcher híbrido — testa 4 combinações pra ser robusto a uploads variados:
 #
@@ -41,10 +44,14 @@ class LogoMatcher:
         self.height, self.width = img.shape[:2]
 
     def find(self, logo_bytes: bytes) -> dict:
-        arr = np.frombuffer(logo_bytes, dtype=np.uint8)
-        raw = cv2.imdecode(arr, cv2.IMREAD_UNCHANGED)
-        if raw is None:
+        # Pillow respeita o EXIF orientation (cv2.imdecode ignora). Sem isso,
+        # fotos do celular tiradas em paisagem/cabeça-pra-baixo chegam ao
+        # matcher rotacionadas — confidence colapsa. Aplicamos exif_transpose
+        # antes de qualquer outro pipeline.
+        exif_orientation = self._decode_with_exif(logo_bytes)
+        if exif_orientation is None:
             return {"found": False, "confidence": 0.0, "reason": "decode_failed"}
+        raw, exif_tag = exif_orientation
 
         logo_bgr = self._prepare_logo(raw)
         logo_gray = cv2.cvtColor(logo_bgr, cv2.COLOR_BGR2GRAY)
@@ -91,11 +98,56 @@ class LogoMatcher:
             "margin": round(margin, 4),
             "second_best_confidence": round(second, 4),
             "method": best["method"],
+            "exif_orientation": exif_tag,
             "position": position,
             "mosaic": {"width": self.width, "height": self.height},
         }
 
     # ---------- helpers ----------
+
+    def _decode_with_exif(
+        self, logo_bytes: bytes
+    ) -> Optional[tuple[np.ndarray, int]]:
+        """Decode bytes preservando EXIF orientation. Retorna (np.ndarray, exif_tag)
+        ou None se nenhum decoder reconhecer.
+
+        np.ndarray vem em formato BGR ou BGRA (compatível com pipeline atual);
+        exif_tag é o valor da Orientation tag (1=normal, 3=180°, 6=90° CW, 8=270° CW,
+        ou 0 se sem EXIF / não disponível)."""
+        try:
+            with Image.open(io.BytesIO(logo_bytes)) as pil_img:
+                exif_tag = 0
+                try:
+                    exif = pil_img.getexif()
+                    if exif:
+                        exif_tag = int(exif.get(274, 0) or 0)
+                except Exception:
+                    exif_tag = 0
+
+                rotated = ImageOps.exif_transpose(pil_img)
+                mode = rotated.mode
+                if mode == "RGBA":
+                    arr = np.array(rotated)
+                    bgr = cv2.cvtColor(arr, cv2.COLOR_RGBA2BGRA)
+                elif mode == "RGB":
+                    arr = np.array(rotated)
+                    bgr = cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
+                elif mode == "L":
+                    arr = np.array(rotated)
+                    bgr = cv2.cvtColor(arr, cv2.COLOR_GRAY2BGR)
+                else:
+                    rotated = rotated.convert("RGB")
+                    arr = np.array(rotated)
+                    bgr = cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
+                return bgr, exif_tag
+        except Exception:
+            # Fallback: cv2.imdecode pro caso de formato exótico que Pillow
+            # não abre (ex: alguns AVIF/HEIC sem plugin).
+            arr = np.frombuffer(logo_bytes, dtype=np.uint8)
+            decoded = cv2.imdecode(arr, cv2.IMREAD_UNCHANGED)
+            if decoded is None:
+                return None
+            return decoded, 0
 
     def _prepare_logo(self, raw: np.ndarray) -> np.ndarray:
         """Decode → BGR 3-channel. Auto-crop bordas transparentes em PNG
