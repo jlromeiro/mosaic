@@ -150,11 +150,17 @@ class LogoMatcher:
             return decoded, 0
 
     def _prepare_logo(self, raw: np.ndarray) -> np.ndarray:
-        """Decode → BGR 3-channel. Auto-crop bordas transparentes em PNG
-        com alpha; compõe sobre fundo preto (mosaico tem fundo preto)
-        pra preservar visual sem introduzir cor aleatória."""
+        """Decode → BGR 3-channel. Auto-crop bordas:
+        - PNG com alpha: bounding box de pixels não-transparentes
+        - JPG/PNG sem alpha: bounding box de pixels não-pretos (fundo
+          preto é a maioria dos casos em logos de hackathon Solana)
+
+        O auto-crop só é aplicado quando reduz a área em >= 20% — evita
+        ativar em imagens já bem cropadas ou onde fundo preto é parte
+        intencional do design."""
         if raw.ndim == 2:
-            return cv2.cvtColor(raw, cv2.COLOR_GRAY2BGR)
+            bgr = cv2.cvtColor(raw, cv2.COLOR_GRAY2BGR)
+            return self._autocrop_dark_bg(bgr)
         if raw.shape[2] == 4:
             alpha = raw[:, :, 3]
             mask = alpha > 20
@@ -166,9 +172,41 @@ class LogoMatcher:
                 bgr = cropped[:, :, :3].astype(np.float32)
                 a = cropped[:, :, 3:4].astype(np.float32) / 255.0
                 composed = (bgr * a).astype(np.uint8)
-                return composed
-            return raw[:, :, :3]
-        return raw  # já BGR
+                return self._autocrop_dark_bg(composed)
+            return self._autocrop_dark_bg(raw[:, :, :3])
+        return self._autocrop_dark_bg(raw)
+
+    @staticmethod
+    def _autocrop_dark_bg(bgr: np.ndarray) -> np.ndarray:
+        """Corta moldura preta ao redor da logo. Ativa apenas se o crop
+        reduz a área em pelo menos 20% E preserva pelo menos 20% da área
+        original em conteúdo não-preto (evita imagens quase totalmente
+        escuras serem cropadas a quase nada)."""
+        if bgr.ndim != 3 or bgr.shape[2] != 3:
+            return bgr
+        gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+        mask = gray > 20  # tolerante a noise de compressão JPEG
+
+        h, w = bgr.shape[:2]
+        total = h * w
+        if not mask.any() or mask.sum() < total * 0.20:
+            return bgr  # imagem quase toda escura — não corta
+
+        ys, xs = np.where(mask)
+        y0, y1 = int(ys.min()), int(ys.max()) + 1
+        x0, x1 = int(xs.min()), int(xs.max()) + 1
+        # Pequeno padding pra não cortar bordas suaves do anti-aliasing
+        pad = 2
+        y0 = max(0, y0 - pad)
+        x0 = max(0, x0 - pad)
+        y1 = min(h, y1 + pad)
+        x1 = min(w, x1 + pad)
+        cropped = bgr[y0:y1, x0:x1]
+
+        ch, cw = cropped.shape[:2]
+        if (ch * cw) / total < 0.80:  # ganho de >= 20% — vale a pena
+            return cropped
+        return bgr  # crop pouco significativo, mantém original
 
     def _build_dims(self, w: int, h: int, square: bool) -> list[tuple[int, int]]:
         if square:
