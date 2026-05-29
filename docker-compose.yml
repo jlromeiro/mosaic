@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: mosaic-web
     restart: unless-stopped
+    init: true              # reaper de PID 1 (nginx)
     networks:
       - portainer_default
     labels:
@@ -49,6 +50,9 @@ services:
       dockerfile: Dockerfile
     container_name: mosaic-api
     restart: unless-stopped
+    init: true              # reaper de PID 1
+    mem_limit: 1g
+    memswap_limit: 1g       # = mem_limit → sem swap (matchTemplate é memory-heavy)
     environment:
       - MOSAIC_PATH=/app/assets/mosaic_original.jpg
       - STATS_PATH=/app/data/stats.json

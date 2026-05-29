@@ -29,6 +29,13 @@ mosaic/
 - `POST /api/find-logo` — multipart upload, retorna `{x, y, width, height, confidence}`
 - `POST /api/generate-share-image` — gera imagem shareable com destaque
 
+### Proteção do `/api/find-logo`
+
+Endpoint público e CPU-bound (~60s por match). Defesas:
+- **Rate limit** por IP (`FIND_LOGO_RATE`, default `10/minute`) — via slowapi, respeitando `X-Forwarded-For` atrás do Traefik.
+- **Fila de concorrência** (`MATCH_CONCURRENCY`, default 2) — bounda matchings simultâneos; responde `429 busy` ao saturar.
+- **Upload** validado por MIME e lido com cap de 5 MB em streaming (`413` ao exceder).
+
 ## Desenvolvimento local
 
 ```bash

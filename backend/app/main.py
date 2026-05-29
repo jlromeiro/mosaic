@@ -3,15 +3,34 @@ import os
 import time
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from app.services.logo_matcher import LogoMatcher
 from app.services.stats import Stats
 from app.services.share_image import generate_share_image, generate_zoom_image
-from app.utils.image_io import validate_upload
+from app.utils.image_io import read_upload_capped
+
+
+def _client_ip(request: Request) -> str:
+    """IP real do cliente atrás do Traefik (X-Forwarded-For), com fallback."""
+    xff = request.headers.get("x-forwarded-for")
+    if xff:
+        return xff.split(",")[0].strip()
+    return get_remote_address(request)
+
+
+# Rate limit por IP + fila de concorrência de matchings. Cada match é ~60s
+# CPU-bound; endpoint é público — sem isso, poucas requests saturam o host.
+limiter = Limiter(key_func=_client_ip)
+_FIND_RATE = os.getenv("FIND_LOGO_RATE", "10/minute")
+_MATCH_CONCURRENCY = int(os.getenv("MATCH_CONCURRENCY", "2"))
+_match_sem = asyncio.Semaphore(_MATCH_CONCURRENCY)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 MOSAIC_PATH = Path(os.getenv("MOSAIC_PATH", BASE_DIR / "assets" / "mosaic_original.jpg"))
@@ -30,9 +49,15 @@ app = FastAPI(
     openapi_url="/api/openapi.json",
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("ALLOWED_ORIGINS", "*").split(","),
+    allow_origins=os.getenv(
+        "ALLOWED_ORIGINS",
+        "https://mosaic.rpcpriority.com,https://mosaic.assistent.top",
+    ).split(","),
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
@@ -64,18 +89,26 @@ def get_stats() -> dict:
 
 
 @app.post("/api/find-logo")
-async def find_logo(file: UploadFile = File(...)) -> dict:
-    contents = await file.read()
-    ok, reason = validate_upload(file.content_type or "", len(contents))
-    if not ok:
-        raise HTTPException(status_code=400, detail=reason)
+@limiter.limit(_FIND_RATE)
+async def find_logo(request: Request, file: UploadFile = File(...)) -> dict:
+    # Valida + lê com cap de tamanho em streaming (não bufferiza gigantes).
+    contents = await read_upload_capped(file)
+
+    # Fila de concorrência: bounda matchings simultâneos (cada ~60s CPU).
+    try:
+        await asyncio.wait_for(_match_sem.acquire(), timeout=0.5)
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=429, detail="busy: muitos matchings simultâneos")
 
     started = time.perf_counter()
-    # Roda matcher (CPU-bound, ~60s) em threadpool — libera o event loop
-    # pra processar healthcheck, /api/stats e outras requests durante o
-    # matching. Sem isso, o handler bloqueia tudo e o Docker marca o
-    # container como unhealthy após ~15s sem responder /api/health.
-    result = await asyncio.to_thread(matcher.find, contents)
+    try:
+        # Roda matcher (CPU-bound, ~60s) em threadpool — libera o event loop
+        # pra processar healthcheck, /api/stats e outras requests durante o
+        # matching. Sem isso, o handler bloqueia tudo e o Docker marca o
+        # container como unhealthy após ~15s sem responder /api/health.
+        result = await asyncio.to_thread(matcher.find, contents)
+    finally:
+        _match_sem.release()
     elapsed_ms = int((time.perf_counter() - started) * 1000)
 
     found = result.get("found", False)
