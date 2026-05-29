@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: mosaic-web
     restart: unless-stopped
+    init: true              # reaper de PID 1 (nginx)
     networks:
       - portainer_default
     labels:
