@@ -4,8 +4,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: mosaic-web
-    restart: unless-stopped
+    restart: on-failure:3   # fail-loud: 3 retries e fica off (vs unless-stopped que esconde crash silencioso)
     init: true              # reaper de PID 1 (nginx)
+    mem_limit: 128m         # serve estático leve — uso real ~24MiB, 5x folga
+    memswap_limit: 128m     # = mem_limit → sem swap
     networks:
       - portainer_default
     labels:
@@ -49,7 +51,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: mosaic-api
-    restart: unless-stopped
+    restart: on-failure:3   # fail-loud: 3 retries e fica off (vs unless-stopped que esconde crash silencioso)
     init: true              # reaper de PID 1
     mem_limit: 1g
     memswap_limit: 1g       # = mem_limit → sem swap (matchTemplate é memory-heavy)
